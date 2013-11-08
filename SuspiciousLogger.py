@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2013 Google Inc.
@@ -28,6 +29,7 @@ by running:
 import argparse
 import httplib2
 import os
+import pygeoip
 import sys
 
 from apiclient import discovery
@@ -59,6 +61,20 @@ FLOW = client.flow_from_clientsecrets(CLIENT_SECRETS,
     ],
     message=tools.message_if_missing(CLIENT_SECRETS))
 
+ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {city}, {region}, {country}  {actor[email]}  {events[0][name]}"
+GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
+geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
+
+def loglog(collection, **kwargs):
+    req = collection.list(**kwargs)
+    response = req.execute()
+    lines = []
+    for entry in response['items']:
+        location = geoip.record_by_addr(entry['ipAddress'])
+        entry['country'] = location.get('country_code3', 'Unknown')
+        entry['region'] = location.get('region_name', 'Unknown')
+        entry['city'] = location.get('city', 'Unknown')
+        yield ACTIVITY_LOGLINE.format(**entry)
 
 def main(argv):
   # Parse the command-line flags.
@@ -80,14 +96,16 @@ def main(argv):
   # Construct the service object for the interacting with the Admin Reports API.
   service = discovery.build('admin', 'reports_v1', http=http)
 
+  # Select the activities collection
+  collection = service.activities()
 
   try:
-    collection = service.activities()
-    req = collection.list(applicationName="login", userKey="maxp@pdx.edu")
-    response = req.execute()
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    pp.pprint(response)
+    collectionFilter = {
+                         'applicationName': 'login',
+                         'userKey':         'all',
+                       }
+    for line in loglog(collection, **collectionFilter):
+        print line
 
   except client.AccessTokenRefreshError:
     print ("The credentials have been revoked or expired, please re-run"
