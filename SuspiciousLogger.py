@@ -110,16 +110,6 @@ ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {city}, {region}, {country}  {actor
 GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
 geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
-def loglog(collection, **kwargs):
-    req = collection.list(**kwargs)
-    response = req.execute()
-    lines = []
-    for entry in response['items']:
-        location = geoip.record_by_addr(entry['ipAddress'])
-        entry['country'] = location.get('country_code3', 'Unknown')
-        entry['region'] = location.get('region_name', 'Unknown')
-        entry['city'] = location.get('city', 'Unknown')
-        yield ACTIVITY_LOGLINE.format(**entry)
 
 def main(argv):
   # Parse the command-line flags.
