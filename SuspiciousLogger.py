@@ -52,11 +52,41 @@ from oauth2client import file
 from oauth2client import client
 from oauth2client import tools
 
-# Parser for command-line arguments.
+# (Google's) parser for command-line arguments pertaining to oauth-reauth.
 parser = argparse.ArgumentParser(
     description=__doc__,
     formatter_class=argparse.RawDescriptionHelpFormatter,
     parents=[tools.argparser])
+
+subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
+
+# Rudiments of exposing:
+# https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
+parser.add_argument('--userKey',
+                    default="all",
+                    help='Filter by username@example.com or "all".')
+parser.add_argument('--applicationName',
+                    default='login',
+                    required=True,
+                    choices=['admin', 'docs', 'login'],
+                    help='Filter by application: admin, docs or login. [default: %(default)s]',
+                   )
+parser.add_argument('--actorIpAddress',
+                    help='An optional user IP address.')
+
+list_parser = subparsers.add_parser('list',
+                                    help='List events by user or IP.')
+
+# This is technically part of the activities/list API too, but takes a couple
+# very useful and very freeform options.
+# 
+# Predominantly intended for monitoring gmail settings changes & login events:
+#   https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/admin-gmail-events
+#   https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/login-event-names
+event_parser = subparsers.add_parser('events',
+                                      help='Filter log lines by event type and additional filters.')
+event_parser.add_argument('eventName')
+event_parser.add_argument('--filters')
 
 
 # CLIENT_SECRETS is name of a file containing the OAuth 2.0 information for this
