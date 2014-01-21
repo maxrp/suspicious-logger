@@ -14,6 +14,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+#
+#
+# For more information on the Admin Reports API you can visit:
+#
+#   https://developers.google.com/admin-sdk/reports/
+#
+# For more information on the Admin Reports API Python library surface you
+# can visit:
+#
+#   https://developers.google.com/resources/api-libraries/documentation/admin/reports_v1/python/latest/
+#
+# For information on the Python Client Library visit:
+#
+#   https://developers.google.com/api-client-library/python/start/get_started
 
 """Command-line skeleton application for Admin Reports API.
 Usage:
@@ -111,18 +126,5 @@ def main(argv):
     print ("The credentials have been revoked or expired, please re-run"
       "the application to re-authorize")
 
-
-# For more information on the Admin Reports API you can visit:
-#
-#   https://developers.google.com/admin-sdk/reports/
-#
-# For more information on the Admin Reports API Python library surface you
-# can visit:
-#
-#   https://developers.google.com/resources/api-libraries/documentation/admin/reports_v1/python/latest/
-#
-# For information on the Python Client Library visit:
-#
-#   https://developers.google.com/api-client-library/python/start/get_started
 if __name__ == '__main__':
   main(sys.argv)
