@@ -1,12 +1,24 @@
 Running
 =======
 
-You can run your starter application with:
+This script is a small set of modifications to Google's generated example app.
 
-  python sample.py
+If you need a set of GeoIP data files, or to update them:
 
-Please read sample.py carefully, it contains detailed information
-in the comments.
+    GeoIP_data/update.sh
+
+Example invokations.
+
+List all logins from an IP:
+
+    ./SuspiciousLogger.py --actorIpAddress 131.252.132.33 --applicationName login list
+
+List all logins for a User:
+
+    ./SuspiciousLogger.py --userKey maxp@pdx.edu --applicationName login list
+
+NOTE: This API is *near* real-time but inexplicably lags behind email notices of
+"suspicious logins" by days, weeks or even months. THANKS GOOGLE.
 
 Installation
 ============
@@ -30,4 +42,3 @@ Documentation
 The documentation for the google-api-python-client library is avialable here:
 
    https://developers.google.com/api-client-library/python/start/get_started
-
