@@ -7,6 +7,10 @@ If you need a set of GeoIP data files, or to update them:
 
     GeoIP_data/update.sh
 
+To install the required Python27 modules:
+
+    pip install -r requirements.txt
+
 Example invokations.
 
 List all logins from an IP:
