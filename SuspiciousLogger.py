@@ -47,7 +47,7 @@ import os
 import pygeoip
 import sys
 
-from apiclient import discovery
+from apiclient import discovery, errors
 from oauth2client import file
 from oauth2client import client
 from oauth2client import tools
@@ -143,18 +143,37 @@ def main(argv):
 
   # Select the activities collection
   collection = service.activities()
+  collectionFilter = {
+                        'userKey':         flags.userKey,
+                        'actorIpAddress':  flags.actorIpAddress,
+                     }
+
+  # probably a better way to do this with argparse
+  if hasattr(flags, 'applicationName'):
+    collectionFilter['applicationName'] = flags.applicationName
+  if hasattr(flags, 'eventName'):
+    collectionFilter['eventName'] = flags.eventName
+    collectionFilter['filters'] = flags.filters
 
   try:
-    collectionFilter = {
-                         'applicationName': 'login',
-                         'userKey':         'all',
-                       }
-    for line in loglog(collection, **collectionFilter):
-        print line
-
+    req = collection.list(**collectionFilter)
+    # API access happens here
+    response = req.execute()
   except client.AccessTokenRefreshError:
     print ("The credentials have been revoked or expired, please re-run"
       "the application to re-authorize")
+  except errors.HttpError, e:
+    print e
+    print "The userKey='{userKey}' does not exist or is suspended".format(**collectionFilter)
+    sys.exit(-1)
+
+  lines = []
+  for entry in response['items']:
+    location = geoip.record_by_addr(entry['ipAddress'])
+    entry['country'] = location.get('country_code3', 'Unknown')
+    entry['region'] = location.get('region_name', 'Unknown')
+    entry['city'] = location.get('city', 'Unknown')
+    print ACTIVITY_LOGLINE.format(**entry)
 
 if __name__ == '__main__':
   main(sys.argv)
