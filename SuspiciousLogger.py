@@ -106,7 +106,7 @@ FLOW = client.flow_from_clientsecrets(CLIENT_SECRETS,
     ],
     message=tools.message_if_missing(CLIENT_SECRETS))
 
-ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {city}, {region}, {country}  {actor[email]}  {events[0][name]}"
+ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  {events[0][name]}"
 GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
 geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
@@ -163,8 +163,10 @@ def main(argv):
   for entry in response['items']:
     location = geoip.record_by_addr(entry['ipAddress'])
     entry['country'] = location.get('country_code3', 'Unknown')
-    entry['region'] = location.get('region_name', 'Unknown')
-    entry['city'] = location.get('city', 'Unknown')
+    entry['region'] = location.get('metro_code')
+    if entry['region'] == None:
+        entry['region'] = "{}, ".format(location.get('city'))
+        entry['region'] += location.get('region_code', 'Unknown')
     print ACTIVITY_LOGLINE.format(**entry)
 
 if __name__ == '__main__':
