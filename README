@@ -5,7 +5,7 @@ This script is a small set of modifications to Google's generated example app.
 
 If you need a set of GeoIP data files, or to update them:
 
-    GeoIP_data/update.sh
+    ./GeoIP_data/update.sh
 
 To install the required Python27 modules:
 
@@ -24,23 +24,7 @@ List all logins for a User:
 NOTE: This API is *near* real-time but inexplicably lags behind email notices of
 "suspicious logins" by days, weeks or even months. THANKS GOOGLE.
 
-Installation
-============
-
-The full source for the google-api-python-client library is included
-in this starter application, but the library has not been installed on your
-system. That means that this sample will run from within the unzipped
-directory, but from nowhere else.
-
-The easiest way to install the client library into your system is by running easy_install:
-
-  easy_install --upgrade google-api-python-client
-
-You might need to add a 'sudo' to the beginning of that command depending on your platform.
-If you don't have easy_install you can get it by installing the setuptools package.
-
-
-Documentation
+API Documentation
 =============
 
 The documentation for the google-api-python-client library is avialable here:
