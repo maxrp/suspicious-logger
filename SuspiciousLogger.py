@@ -62,28 +62,17 @@ parser.add_argument('--actorIpAddress',
 list_parser = subparsers.add_parser('list',
                                     help='List events by user or IP.')
 
-# This is technically part of the activities/list API too, but takes a couple
-# very useful and very freeform options.
-#
-# Predominantly intended for monitoring gmail settings changes & login events:
-#   https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/admin-gmail-events
-#   https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/login-event-names
 event_parser = subparsers.add_parser('events',
                                       help='Filter log lines by event type and additional filters.')
 event_parser.add_argument('eventName')
 event_parser.add_argument('--filters')
 
 
-# CLIENT_SECRETS is name of a file containing the OAuth 2.0 information for this
-# application, including client_id and client_secret. You can see the Client ID
-# and Client secret on the APIs page in the Cloud Console:
+# CLIENT_SECRETS is name of a file containing the OAuth 2.0 information
 # <https://cloud.google.com/console#/project/803928506099/apiui>
 CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 
 # Set up a Flow object to be used for authentication.
-# Add one or more of the following scopes. PLEASE ONLY ADD THE SCOPES YOU
-# NEED. For more information on using scopes please see
-# <https://developers.google.com/+/best-practices>.
 FLOW = client.flow_from_clientsecrets(CLIENT_SECRETS,
   scope=[
       'https://www.googleapis.com/auth/admin.reports.audit.readonly',
