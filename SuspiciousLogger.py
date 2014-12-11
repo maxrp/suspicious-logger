@@ -47,7 +47,7 @@ import os
 import pygeoip
 import sys
 
-from apiclient import discovery, errors
+from googleapiclient import discovery, errors
 from oauth2client import file
 from oauth2client import client
 from oauth2client import tools
