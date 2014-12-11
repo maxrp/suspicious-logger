@@ -79,7 +79,7 @@ list_parser = subparsers.add_parser('list',
 
 # This is technically part of the activities/list API too, but takes a couple
 # very useful and very freeform options.
-# 
+#
 # Predominantly intended for monitoring gmail settings changes & login events:
 #   https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/admin-gmail-events
 #   https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/login-event-names
@@ -112,62 +112,61 @@ geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
 
 def main(argv):
-  # Prevent obnoxious browser window launching if our session is expired
-  argv.insert(1, "--noauth_local_webserver")
-  # Parse the command-line flags.
-  flags = parser.parse_args(argv[1:])
+    # Prevent obnoxious browser window launching if our session is expired
+    argv.insert(1, "--noauth_local_webserver")
+    # Parse the command-line flags.
+    flags = parser.parse_args(argv[1:])
 
-  # If the credentials don't exist or are invalid run through the native client
-  # flow. The Storage object will ensure that if successful the good
-  # credentials will get written back to the file.
-  storage = file.Storage('SuspiciousLogger.dat')
-  credentials = storage.get()
-  if credentials is None or credentials.invalid:
-    credentials = tools.run_flow(FLOW, storage, flags)
+    # If the credentials don't exist or are invalid run through the native client
+    # flow. The Storage object will ensure that if successful the good
+    # credentials will get written back to the file.
+    storage = file.Storage('SuspiciousLogger.dat')
+    credentials = storage.get()
+    if credentials is None or credentials.invalid:
+        credentials = tools.run_flow(FLOW, storage, flags)
 
-  # Create an httplib2.Http object to handle our HTTP requests and authorize it
-  # with our good Credentials.
-  http = httplib2.Http()
-  http = credentials.authorize(http)
+    # Create an httplib2.Http object to handle our HTTP requests and authorize it
+    # with our good Credentials.
+    http = httplib2.Http()
+    http = credentials.authorize(http)
 
-  # Construct the service object for the interacting with the Admin Reports API.
-  service = discovery.build('admin', 'reports_v1', http=http)
+    # Construct the service object for the interacting with the Admin Reports API.
+    service = discovery.build('admin', 'reports_v1', http=http)
 
-  # Select the activities collection
-  collection = service.activities()
-  collectionFilter = {
-                        'userKey':         flags.userKey,
-                        'actorIpAddress':  flags.actorIpAddress,
-                     }
+    # Select the activities collection
+    collection = service.activities()
+    collectionFilter = {
+                          'userKey':         flags.userKey,
+                          'actorIpAddress':  flags.actorIpAddress,
+                       }
 
-  # probably a better way to do this with argparse
-  if hasattr(flags, 'applicationName'):
-    collectionFilter['applicationName'] = flags.applicationName
-  if hasattr(flags, 'eventName'):
-    collectionFilter['eventName'] = flags.eventName
-    collectionFilter['filters'] = flags.filters
+    # probably a better way to do this with argparse
+    if hasattr(flags, 'applicationName'):
+        collectionFilter['applicationName'] = flags.applicationName
+    if hasattr(flags, 'eventName'):
+        collectionFilter['eventName'] = flags.eventName
+        collectionFilter['filters'] = flags.filters
 
-  try:
-    req = collection.list(**collectionFilter)
-    # API access happens here
-    response = req.execute()
-  except client.AccessTokenRefreshError:
-    print ("The credentials have been revoked or expired, please re-run"
-      "the application to re-authorize")
-  except errors.HttpError, e:
-    print e
-    print "The userKey='{userKey}' does not exist or is suspended".format(**collectionFilter)
-    sys.exit(-1)
+    try:
+        req = collection.list(**collectionFilter)
+        # API access happens here
+        response = req.execute()
+    except client.AccessTokenRefreshError:
+        print ("The credentials have been revoked or expired, please re-run"
+          "the application to re-authorize")
+    except errors.HttpError, e:
+        print e
+        print "The userKey='{userKey}' does not exist or is suspended".format(**collectionFilter)
+        sys.exit(-1)
 
-  lines = []
-  for entry in response['items']:
-    location = geoip.record_by_addr(entry['ipAddress'])
-    entry['country'] = location.get('country_code3', 'Unknown')
-    entry['region'] = location.get('metro_code')
-    if entry['region'] == None:
-        entry['region'] = "{}, ".format(location.get('city'))
-        entry['region'] += location.get('region_code', 'Unknown')
-    print ACTIVITY_LOGLINE.format(**entry)
+    for entry in response['items']:
+        location = geoip.record_by_addr(entry['ipAddress'])
+        entry['country'] = location.get('country_code3', 'Unknown')
+        entry['region'] = location.get('metro_code')
+        if entry['region'] == None:
+            entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
+                                              location.get('region_code', 'Unknown'))
+        print ACTIVITY_LOGLINE.format(**entry)
 
 if __name__ == '__main__':
-  main(sys.argv)
+    main(sys.argv)
