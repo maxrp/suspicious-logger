@@ -33,7 +33,7 @@ import pygeoip
 import sys
 
 from googleapiclient import discovery, errors
-from oauth2client import file
+from oauth2client import file as oauth_file
 from oauth2client import client
 from oauth2client import tools
 
@@ -54,7 +54,8 @@ parser.add_argument('--applicationName',
                     default='login',
                     required=True,
                     choices=['admin', 'docs', 'login'],
-                    help='Filter by application: admin, docs or login. [default: %(default)s]',
+                    help='Filter by application: admin, docs or login. \
+                    [default: %(default)s]',
                    )
 parser.add_argument('--actorIpAddress',
                     help='An optional user IP address.')
@@ -62,8 +63,8 @@ parser.add_argument('--actorIpAddress',
 list_parser = subparsers.add_parser('list',
                                     help='List events by user or IP.')
 
-event_parser = subparsers.add_parser('events',
-                                      help='Filter log lines by event type and additional filters.')
+event_parser = subparsers.add_parser('events', \
+                                     help='Filter log lines by event type and additional filters.')
 event_parser.add_argument('eventName')
 event_parser.add_argument('--filters')
 
@@ -72,13 +73,14 @@ event_parser.add_argument('--filters')
 # <https://cloud.google.com/console#/project/803928506099/apiui>
 CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
 
+APP_SCOPE = ['https://www.googleapis.com/auth/admin.reports.audit.readonly',
+             'https://www.googleapis.com/auth/admin.reports.usage.readonly']
+
 # Set up a Flow object to be used for authentication.
-FLOW = client.flow_from_clientsecrets(CLIENT_SECRETS,
-  scope=[
-      'https://www.googleapis.com/auth/admin.reports.audit.readonly',
-      'https://www.googleapis.com/auth/admin.reports.usage.readonly',
-    ],
-    message=tools.message_if_missing(CLIENT_SECRETS))
+FLOW = client.flow_from_clientsecrets( \
+                              CLIENT_SECRETS, \
+                              scope=APP_SCOPE, \
+                              message=tools.message_if_missing(CLIENT_SECRETS))
 
 ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  {events[0][name]}"
 GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
@@ -94,7 +96,7 @@ def main(argv):
     # If the credentials don't exist or are invalid run through the native client
     # flow. The Storage object will ensure that if successful the good
     # credentials will get written back to the file.
-    storage = file.Storage('SuspiciousLogger.dat')
+    storage = oauth_file.Storage('SuspiciousLogger.dat')
     credentials = storage.get()
     if credentials is None or credentials.invalid:
         credentials = tools.run_flow(FLOW, storage, flags)
@@ -109,10 +111,8 @@ def main(argv):
 
     # Select the activities collection
     collection = service.activities()
-    collectionFilter = {
-                          'userKey':         flags.userKey,
-                          'actorIpAddress':  flags.actorIpAddress,
-                       }
+    collectionFilter = {'userKey': flags.userKey,
+                        'actorIpAddress': flags.actorIpAddress}
 
     # probably a better way to do this with argparse
     if hasattr(flags, 'applicationName'):
@@ -126,8 +126,7 @@ def main(argv):
         # API access happens here
         response = req.execute()
     except client.AccessTokenRefreshError:
-        print ("The credentials have been revoked or expired, please re-run"
-          "the application to re-authorize")
+        print "Authorization has expired, re-authing next run."
     except errors.HttpError, e:
         print e
         print "The userKey='{userKey}' does not exist or is suspended".format(**collectionFilter)
