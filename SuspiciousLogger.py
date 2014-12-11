@@ -34,40 +34,7 @@ import sys
 
 from googleapiclient import discovery, errors
 from oauth2client import file as oauth_file
-from oauth2client import client
-from oauth2client import tools
-
-# (Google's) parser for command-line arguments pertaining to oauth-reauth.
-parser = argparse.ArgumentParser(
-    description=__doc__,
-    formatter_class=argparse.RawDescriptionHelpFormatter,
-    parents=[tools.argparser])
-
-subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
-
-# Rudiments of exposing:
-# https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
-parser.add_argument('--userKey',
-                    default="all",
-                    help='Filter by username@example.com or "all".')
-parser.add_argument('--applicationName',
-                    default='login',
-                    required=True,
-                    choices=['admin', 'docs', 'login'],
-                    help='Filter by application: admin, docs or login. \
-                    [default: %(default)s]',
-                   )
-parser.add_argument('--actorIpAddress',
-                    help='An optional user IP address.')
-
-list_parser = subparsers.add_parser('list',
-                                    help='List events by user or IP.')
-
-event_parser = subparsers.add_parser('events', \
-                                     help='Filter log lines by event type and additional filters.')
-event_parser.add_argument('eventName')
-event_parser.add_argument('--filters')
-
+from oauth2client import client, tools
 
 # CLIENT_SECRETS is name of a file containing the OAuth 2.0 information
 # <https://cloud.google.com/console#/project/803928506099/apiui>
@@ -84,10 +51,42 @@ FLOW = client.flow_from_clientsecrets( \
 
 ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  {events[0][name]}"
 GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
-geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
 
 def main(argv):
+    # (Google's) parser for command-line arguments pertaining to oauth-reauth.
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        parents=[tools.argparser])
+
+    subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
+
+    # Rudiments of exposing:
+    # https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
+    parser.add_argument('--userKey',
+                        default="all",
+                        help='Filter by username@example.com or "all".')
+    parser.add_argument('--applicationName',
+                        default='login',
+                        required=True,
+                        choices=['admin', 'docs', 'login'],
+                        help='Filter by application: admin, docs or login. \
+                        [default: %(default)s]',
+                       )
+    parser.add_argument('--actorIpAddress',
+                        help='An optional user IP address.')
+
+    list_parser = subparsers.add_parser('list',
+                                        help='List events by user or IP.')
+
+    event_parser = subparsers.add_parser('events', \
+                                         help='Filter log lines by event type \
+                                         and additional filters.')
+    event_parser.add_argument('eventName')
+    event_parser.add_argument('--filters')
+
+
     # Prevent obnoxious browser window launching if our session is expired
     argv.insert(1, "--noauth_local_webserver")
     # Parse the command-line flags.
@@ -132,6 +131,7 @@ def main(argv):
         print "The userKey='{userKey}' does not exist or is suspended".format(**collectionFilter)
         sys.exit(-1)
 
+    geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
     for entry in response['items']:
         location = geoip.record_by_addr(entry['ipAddress'])
         entry['country'] = location.get('country_code3', 'Unknown')
