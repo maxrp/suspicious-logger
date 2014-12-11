@@ -15,21 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-#
-# For more information on the Admin Reports API you can visit:
-#
-#   https://developers.google.com/admin-sdk/reports/
-#
-# For more information on the Admin Reports API Python library surface you
-# can visit:
-#
-#   https://developers.google.com/resources/api-libraries/documentation/admin/reports_v1/python/latest/
-#
-# For information on the Python Client Library visit:
-#
-#   https://developers.google.com/api-client-library/python/start/get_started
-
 """Command-line skeleton application for Admin Reports API.
 Usage:
   $ python sample.py
