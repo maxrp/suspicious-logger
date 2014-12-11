@@ -112,6 +112,8 @@ geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
 
 def main(argv):
+  # Prevent obnoxious browser window launching if our session is expired
+  argv.insert(1, "--noauth_local_webserver")
   # Parse the command-line flags.
   flags = parser.parse_args(argv[1:])
 
