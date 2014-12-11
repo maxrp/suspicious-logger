@@ -11,18 +11,19 @@ http://download.maxmind.com/download/geoip/database/asnum/GeoIPASNum.dat.gz
 http://download.maxmind.com/download/geoip/database/asnum/GeoIPASNumv6.dat.gz
 "
 
+DATADIR=$(dirname `readlink -f ${BASH_SOURCE[0]}`)
+
+cd ${DATADIR}
+
 for url in $FILES; do
     IFS='/' read -a url_chunks <<< "$url"
     chunk_count=${#url_chunks[@]}
     last_position=$((chunk_count - 1))
     filename=${url_chunks[${last_position}]}
-   
-    rm -rf *.dat
+  
+    if [[ -f $filename ]]; then rm -rf "${filename}"; fi
 
-    if [[ -f $filename ]]
-    then 
-            rm -rf $filename
-    else
-       wget -nv $url
-    fi
+    wget -nv $url
+    if [[ -f ${filename%.gz} ]]; then rm -v "${filename%.gz}"; fi
+    gunzip -v "${filename}"
 done;
