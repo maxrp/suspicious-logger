@@ -49,8 +49,8 @@ FLOW = client.flow_from_clientsecrets( \
                               scope=APP_SCOPE, \
                               message=tools.message_if_missing(CLIENT_SECRETS))
 
-ACTIVITY_LOGLINE = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  {login_type}  {events[0][name]}"
 GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
+GEOIP = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
 
 def main(argv):
@@ -118,7 +118,8 @@ def main(argv):
         print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
         sys.exit(-1)
 
-    geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
+    log_fmt = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  "
+    log_fmt += "{login_type}  {events[0][name]}"
     for entry in response['items']:
         # unpack non-redundant extra details such as login_type to the top level dict
         for event in entry['events']:
@@ -127,13 +128,13 @@ def main(argv):
                 if not entry.has_key(params['name']):
                     entry[params['name']] = params['value']
 
-        location = geoip.record_by_addr(entry['ipAddress'])
+        location = GEOIP.record_by_addr(entry['ipAddress'])
         entry['country'] = location.get('country_code3', 'Unknown')
         entry['region'] = location.get('metro_code')
         if entry['region'] == None:
             entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
                                               location.get('region_code', 'Unknown'))
-        print ACTIVITY_LOGLINE.format(**entry)
+        print log_fmt.format(**entry)
 
 if __name__ == '__main__':
     main(sys.argv)
