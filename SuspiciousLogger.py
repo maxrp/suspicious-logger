@@ -69,6 +69,45 @@ def oauthorize(client_secrets, session_file):
 
     return discovery.build('admin', 'reports_v1', http=http)
 
+def filter_collection(collection, collection_filter):
+    """Tries to execute a query -- collection_filter -- against a collection
+    returning the result on success and None on failure."""
+    try:
+        req = collection.list(**collection_filter)
+        # API access happens here
+        return req.execute()
+    except client.AccessTokenRefreshError:
+        print "Authorization has expired, re-authing next run."
+        return None
+    except errors.HttpError, err:
+        print err
+        print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
+        return None
+
+def list_results(response):
+    """Provides basic formatting for some common collection.list fields."""
+    log_fmt = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  "
+    log_fmt += "{events[0][name]}"
+    ext_fmt = log_fmt + "  {login_type}"
+    for entry in response['items']:
+        # unpack non-redundant extra details such as login_type to the top level dict
+        for event in entry['events']:
+            if event.has_key('parameters'):
+                params = event['parameters'].pop()
+                if not entry.has_key(params['name']):
+                    entry[params['name']] = params['value']
+
+        location = GEOIP.record_by_addr(entry['ipAddress'])
+        entry['country'] = location.get('country_code3', 'Unknown')
+        entry['region'] = location.get('metro_code')
+        if entry['region'] == None:
+            entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
+                                              location.get('region_code', 'Unknown'))
+        if entry.has_key('login_type'):
+            print ext_fmt.format(**entry)
+        else:
+            print log_fmt.format(**entry)
+
 def main(argv):
     # Rudiments of exposing:
     # https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
@@ -105,38 +144,12 @@ def main(argv):
         collection_filter['eventName'] = flags.eventName
         collection_filter['filters'] = flags.filters
 
-    try:
-        req = collection.list(**collection_filter)
-        # API access happens here
-        response = req.execute()
-    except client.AccessTokenRefreshError:
-        print "Authorization has expired, re-authing next run."
-    except errors.HttpError, e:
-        print e
-        print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
-        sys.exit(-1)
-
-    log_fmt = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  "
-    log_fmt += "{events[0][name]}"
-    ext_fmt = log_fmt + "  {login_type}"
-    for entry in response['items']:
-        # unpack non-redundant extra details such as login_type to the top level dict
-        for event in entry['events']:
-            if event.has_key('parameters'):
-                params = event['parameters'].pop()
-                if not entry.has_key(params['name']):
-                    entry[params['name']] = params['value']
-
-        location = GEOIP.record_by_addr(entry['ipAddress'])
-        entry['country'] = location.get('country_code3', 'Unknown')
-        entry['region'] = location.get('metro_code')
-        if entry['region'] == None:
-            entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
-                                              location.get('region_code', 'Unknown'))
-        if entry.has_key('login_type'):
-            print ext_fmt.format(**entry)
-        else:
-            print log_fmt.format(**entry)
+    response = filter_collection(collection, collection_filter)
+    if response:
+        list_results(response)
+    else:
+        print "Failed to collect results."
+        sys.exit(127)
 
 if __name__ == '__main__':
     main(sys.argv)
