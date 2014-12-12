@@ -54,13 +54,8 @@ GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.
 
 
 def main(argv):
-    # (Google's) parser for command-line arguments pertaining to oauth-reauth.
-    parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        parents=[tools.argparser])
+    parser = argparse.ArgumentParser()
 
-    subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
 
     # Rudiments of exposing:
     # https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
@@ -77,8 +72,8 @@ def main(argv):
     parser.add_argument('--actorIpAddress',
                         help='An optional user IP address.')
 
-    list_parser = subparsers.add_parser('list',
-                                        help='List events by user or IP.')
+    subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
+    subparsers.add_parser('list', help='List events by user or IP.')
 
     event_parser = subparsers.add_parser('events', \
                                          help='Filter log lines by event type \
@@ -87,8 +82,6 @@ def main(argv):
     event_parser.add_argument('--filters')
 
 
-    # Prevent obnoxious browser window launching if our session is expired
-    argv.insert(1, "--noauth_local_webserver")
     # Parse the command-line flags.
     flags = parser.parse_args(argv[1:])
 
@@ -98,7 +91,10 @@ def main(argv):
     storage = oauth_file.Storage('SuspiciousLogger.dat')
     credentials = storage.get()
     if credentials is None or credentials.invalid:
-        credentials = tools.run_flow(FLOW, storage, flags)
+        # Prevent obnoxious browser window launching if our session is expired
+        faux_parser = argparse.ArgumentParser(parents=[tools.argparser])
+        flow_flags = faux_parser.parse_args("--noauth_local_webserver".split())
+        credentials = tools.run_flow(FLOW, storage, flow_flags)
 
     # Create an httplib2.Http object to handle our HTTP requests and authorize it
     # with our good Credentials.
