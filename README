@@ -15,11 +15,11 @@ Example invokations.
 
 List all logins from an IP:
 
-    ./SuspiciousLogger.py --actorIpAddress 131.252.132.33 --applicationName login list
+    ./SuspiciousLogger.py --actorIpAddress 131.252.132.33 list
 
 List all logins for a User:
 
-    ./SuspiciousLogger.py --userKey maxp@pdx.edu --applicationName login list
+    ./SuspiciousLogger.py --userKey maxp@pdx.edu list
 
 NOTE: This API is *near* real-time but inexplicably lags behind email notices of
 "suspicious logins" by days, weeks or even months. THANKS GOOGLE.
