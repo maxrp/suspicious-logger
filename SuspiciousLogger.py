@@ -70,10 +70,9 @@ def oauthorize(client_secrets, session_file):
     return discovery.build('admin', 'reports_v1', http=http)
 
 def main(argv):
-    parser = argparse.ArgumentParser()
-
     # Rudiments of exposing:
     # https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
+    parser = argparse.ArgumentParser()
     parser.add_argument('--userKey',
                         default="all",
                         help='Filter by username@example.com or "all".')
