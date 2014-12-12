@@ -32,6 +32,7 @@ import os
 import pygeoip
 import sys
 
+from IPy import IP
 from googleapiclient import discovery, errors
 from oauth2client import file as oauth_file
 from oauth2client import client, tools
@@ -108,16 +109,43 @@ def list_results(response):
         else:
             print log_fmt.format(**entry)
 
+def valid_selector(selector):
+    """Validator for the 'selector' arg type -- checks for one or more email
+    addresses (possibly comma separated) or IP addresses or CIDR masks.
+    Returns an IP object, or a list of email addresses. The result is always
+    iterable.
+
+    Validation on email here need not be tight, just type it right."""
+    if '@' in selector: # it's probably email address(es)
+        if ',' in selector:
+            return selector.split(',') # it's list of them
+        else:
+            return [selector]
+    else:
+        try:
+            return IP(selector)
+        except:
+            raise
+
+def set_collection_filter(collection_filter, selector):
+    """Set up the collection filter based on the type of the selector."""
+    # set these selectors to defaults
+    collection_filter['userKey'] = 'all'
+    collection_filter['actorIpAddress'] = None
+
+    if isinstance(selector, IP):
+        collection_filter['actorIpAddress'] = selector
+    else:
+        collection_filter['userKey'] = selector
+
+    return collection_filter
+
 def main(argv):
     """This tool composes the rudiments of exposing the various aspect of the
     admin-sdk reports API:
         https://developers.google.com/admin-sdk/reports/v1/reference/activities/list"""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--userKey',
-                        default="all",
-                        help='Filter by username@example.com or "all".')
-    parser.add_argument('--actorIpAddress',
-                        help='An optional user IP address.')
+    parser.add_argument('selectors', type=valid_selector)
 
     subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
     subparsers.add_parser('list', help='List events by user or IP.')
@@ -130,27 +158,27 @@ def main(argv):
 
     # Parse the command-line flags.
     flags = parser.parse_args(argv[1:])
-
     # Construct the service object for the interacting with the Admin Reports API.
     service = oauthorize(CLIENT_SECRETS, SESSION_STATE)
 
     # Select the activities collection
     collection = service.activities()
-    collection_filter = {'userKey': flags.userKey,
-                         'actorIpAddress': flags.actorIpAddress,
-                         'applicationName': 'login'}
+    collection_filter = {'applicationName': 'login'}
 
     # probably a better way to do this with argparse
     if hasattr(flags, 'eventName'):
         collection_filter['eventName'] = flags.eventName
         collection_filter['filters'] = flags.filters
 
-    response = filter_collection(collection, collection_filter)
-    if response:
-        list_results(response)
-    else:
-        print "Failed to collect results."
-        sys.exit(127)
+    for selector in flags.selectors:
+        collection_filter = set_collection_filter(collection_filter, selector)
+        # TODO: merge and sort multiple responses
+        response = filter_collection(collection, collection_filter)
+        if response:
+            list_results(response)
+        else:
+            print "Failed to collect results."
+            sys.exit(127)
 
 if __name__ == '__main__':
     main(sys.argv)
