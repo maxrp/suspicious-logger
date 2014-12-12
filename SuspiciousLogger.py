@@ -119,7 +119,8 @@ def main(argv):
         sys.exit(-1)
 
     log_fmt = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  "
-    log_fmt += "{login_type}  {events[0][name]}"
+    log_fmt += "{events[0][name]}"
+    ext_fmt = log_fmt + "  {login_type}"
     for entry in response['items']:
         # unpack non-redundant extra details such as login_type to the top level dict
         for event in entry['events']:
@@ -134,7 +135,10 @@ def main(argv):
         if entry['region'] == None:
             entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
                                               location.get('region_code', 'Unknown'))
-        print log_fmt.format(**entry)
+        if entry.has_key('login_type'):
+            print ext_fmt.format(**entry)
+        else:
+            print log_fmt.format(**entry)
 
 if __name__ == '__main__':
     main(sys.argv)
