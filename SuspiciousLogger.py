@@ -56,19 +56,11 @@ GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.
 def main(argv):
     parser = argparse.ArgumentParser()
 
-
     # Rudiments of exposing:
     # https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
     parser.add_argument('--userKey',
                         default="all",
                         help='Filter by username@example.com or "all".')
-    parser.add_argument('--applicationName',
-                        default='login',
-                        required=True,
-                        choices=['admin', 'docs', 'login'],
-                        help='Filter by application: admin, docs or login. \
-                        [default: %(default)s]',
-                       )
     parser.add_argument('--actorIpAddress',
                         help='An optional user IP address.')
 
@@ -106,18 +98,17 @@ def main(argv):
 
     # Select the activities collection
     collection = service.activities()
-    collectionFilter = {'userKey': flags.userKey,
-                        'actorIpAddress': flags.actorIpAddress}
+    collection_filter = {'userKey': flags.userKey,
+                         'actorIpAddress': flags.actorIpAddress,
+                         'applicationName': 'login'}
 
     # probably a better way to do this with argparse
-    if hasattr(flags, 'applicationName'):
-        collectionFilter['applicationName'] = flags.applicationName
     if hasattr(flags, 'eventName'):
-        collectionFilter['eventName'] = flags.eventName
-        collectionFilter['filters'] = flags.filters
+        collection_filter['eventName'] = flags.eventName
+        collection_filter['filters'] = flags.filters
 
     try:
-        req = collection.list(**collectionFilter)
+        req = collection.list(**collection_filter)
         # API access happens here
         response = req.execute()
     except client.AccessTokenRefreshError:
