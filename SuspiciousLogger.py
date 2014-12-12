@@ -109,8 +109,9 @@ def list_results(response):
             print log_fmt.format(**entry)
 
 def main(argv):
-    # Rudiments of exposing:
-    # https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
+    """This tool composes the rudiments of exposing the various aspect of the
+    admin-sdk reports API:
+        https://developers.google.com/admin-sdk/reports/v1/reference/activities/list"""
     parser = argparse.ArgumentParser()
     parser.add_argument('--userKey',
                         default="all",
