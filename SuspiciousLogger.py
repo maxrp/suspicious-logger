@@ -39,19 +39,35 @@ from oauth2client import client, tools
 # CLIENT_SECRETS is name of a file containing the OAuth 2.0 information
 # <https://cloud.google.com/console#/project/803928506099/apiui>
 CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
-
-APP_SCOPE = ['https://www.googleapis.com/auth/admin.reports.audit.readonly',
-             'https://www.googleapis.com/auth/admin.reports.usage.readonly']
-
-# Set up a Flow object to be used for authentication.
-FLOW = client.flow_from_clientsecrets( \
-                              CLIENT_SECRETS, \
-                              scope=APP_SCOPE, \
-                              message=tools.message_if_missing(CLIENT_SECRETS))
-
+SESSION_STATE = os.path.join(os.path.dirname(__file__), 'SuspiciousLogger.dat')
 GEOIP_DATA = os.path.join(os.path.dirname(__file__), 'GeoIP_data', 'GeoLiteCity.dat')
 GEOIP = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
+def oauthorize(client_secrets, session_file):
+    """Takes a path to a client_secrets.json and a session.dat file,
+    performs an OAuth auth-flow and returns a service object."""
+    # If the credentials don't exist or are invalid run through the native client
+    # flow. The Storage object will ensure that if successful the good
+    # credentials will get written back to the file.
+    storage = oauth_file.Storage(session_file)
+    credentials = storage.get()
+
+    if credentials is None or credentials.invalid:
+        # Prevent obnoxious browser window launching if our session is expired
+        faux_parser = argparse.ArgumentParser(parents=[tools.argparser])
+        flow_flags = faux_parser.parse_args("--noauth_local_webserver".split())
+        scope = ['https://www.googleapis.com/auth/admin.reports.audit.readonly',
+                 'https://www.googleapis.com/auth/admin.reports.usage.readonly']
+        flow = client.flow_from_clientsecrets(client_secrets, scope=scope, \
+                              message=tools.message_if_missing(client_secrets))
+        credentials = tools.run_flow(flow, storage, flow_flags)
+
+    # Create an httplib2.Http object to handle our HTTP requests and authorize it
+    # with our good Credentials.
+    http = httplib2.Http()
+    http = credentials.authorize(http)
+
+    return discovery.build('admin', 'reports_v1', http=http)
 
 def main(argv):
     parser = argparse.ArgumentParser()
@@ -73,28 +89,11 @@ def main(argv):
     event_parser.add_argument('eventName')
     event_parser.add_argument('--filters')
 
-
     # Parse the command-line flags.
     flags = parser.parse_args(argv[1:])
 
-    # If the credentials don't exist or are invalid run through the native client
-    # flow. The Storage object will ensure that if successful the good
-    # credentials will get written back to the file.
-    storage = oauth_file.Storage('SuspiciousLogger.dat')
-    credentials = storage.get()
-    if credentials is None or credentials.invalid:
-        # Prevent obnoxious browser window launching if our session is expired
-        faux_parser = argparse.ArgumentParser(parents=[tools.argparser])
-        flow_flags = faux_parser.parse_args("--noauth_local_webserver".split())
-        credentials = tools.run_flow(FLOW, storage, flow_flags)
-
-    # Create an httplib2.Http object to handle our HTTP requests and authorize it
-    # with our good Credentials.
-    http = httplib2.Http()
-    http = credentials.authorize(http)
-
     # Construct the service object for the interacting with the Admin Reports API.
-    service = discovery.build('admin', 'reports_v1', http=http)
+    service = oauthorize(CLIENT_SECRETS, SESSION_STATE)
 
     # Select the activities collection
     collection = service.activities()
