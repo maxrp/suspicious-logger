@@ -115,7 +115,7 @@ def main(argv):
         print "Authorization has expired, re-authing next run."
     except errors.HttpError, e:
         print e
-        print "The userKey='{userKey}' does not exist or is suspended".format(**collectionFilter)
+        print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
         sys.exit(-1)
 
     geoip = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
