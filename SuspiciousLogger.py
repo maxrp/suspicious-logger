@@ -85,12 +85,12 @@ def filter_collection(collection, collection_filter):
         print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
         return None
 
-def list_results(response):
+def fmt_responses(response):
     """Provides basic formatting for some common collection.list fields."""
     log_fmt = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  "
     log_fmt += "{events[0][name]}"
     ext_fmt = log_fmt + "  {login_type}"
-    for entry in response['items']:
+    for entry in response:
         # unpack non-redundant extra details such as login_type to the top level dict
         for event in entry['events']:
             if event.has_key('parameters'):
@@ -105,9 +105,9 @@ def list_results(response):
             entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
                                               location.get('region_code', 'Unknown'))
         if entry.has_key('login_type'):
-            print ext_fmt.format(**entry)
+            yield ext_fmt.format(**entry)
         else:
-            print log_fmt.format(**entry)
+            yield log_fmt.format(**entry)
 
 def valid_selector(selector):
     """Validator for the 'selector' arg type -- checks for one or more email
@@ -170,15 +170,18 @@ def main(argv):
         collection_filter['eventName'] = flags.eventName
         collection_filter['filters'] = flags.filters
 
+    responses = []
+
     for selector in flags.selectors:
         collection_filter = set_collection_filter(collection_filter, selector)
-        # TODO: merge and sort multiple responses
         response = filter_collection(collection, collection_filter)
-        if response:
-            list_results(response)
+        if response.has_key('items'):
+            responses.extend(response['items'])
         else:
-            print "Failed to collect results."
-            sys.exit(127)
+            print "Failed to collect results for {}".format(selector)
+
+    responses.sort(key=lambda event: event['id']['time'])
+    print "\n".join([response for response in fmt_responses(responses)])
 
 if __name__ == '__main__':
     main(sys.argv)
