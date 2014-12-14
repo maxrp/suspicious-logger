@@ -32,6 +32,7 @@ import os
 import pygeoip
 import sys
 
+from datetime import datetime
 from IPy import IP
 from googleapiclient import discovery, errors
 from oauth2client import file as oauth_file
@@ -180,7 +181,9 @@ def main(argv):
         else:
             print "Failed to collect results for {}".format(selector)
 
-    responses.sort(key=lambda event: event['id']['time'])
+    responses.sort(key=lambda event: datetime.strptime(event['id']['time'], \
+                                                      "%Y-%m-%dT%H:%M:%S.000Z"))
+
     print "\n".join([response for response in fmt_responses(responses)])
 
 if __name__ == '__main__':
