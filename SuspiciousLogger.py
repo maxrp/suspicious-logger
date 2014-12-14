@@ -96,7 +96,7 @@ def fmt_responses(response):
         for event in entry['events']:
             if event.has_key('parameters'):
                 params = event['parameters'].pop()
-                if not entry.has_key(params['name']):
+                if not entry.has_key(params['name']) and params.has_key('value'):
                     entry[params['name']] = params['value']
 
         location = GEOIP.record_by_addr(entry['ipAddress'])
