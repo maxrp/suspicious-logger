@@ -117,16 +117,17 @@ def valid_selector(selector):
     iterable.
 
     Validation on email here need not be tight, just type it right."""
-    if '@' in selector: # it's probably email address(es)
-        if ',' in selector:
-            return selector.split(',') # it's list of them
+    results = []
+
+    for selector in selector.split(','):
+        if '@' in selector: # it's probably email address(es)
+            results.append(selector)
         else:
-            return [selector]
-    else:
-        try:
-            return IP(selector)
-        except:
-            raise
+            try:
+                results.extend([ip for ip in IP(selector)])  # The IP is itself iterable
+            except:
+                raise
+    return results
 
 def set_collection_filter(collection_filter, selector):
     """Set up the collection filter based on the type of the selector."""
