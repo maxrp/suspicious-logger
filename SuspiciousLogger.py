@@ -72,18 +72,18 @@ def oauthorize(client_secrets, session_file):
 
 def filter_collection(collection, collection_filter):
     """Tries to execute a query -- collection_filter -- against a collection
-    returning the result on success and None on failure."""
+    returning the result on success and the empty dict on failure."""
     try:
         req = collection.list(**collection_filter)
         # API access happens here
         return req.execute()
     except client.AccessTokenRefreshError:
         print "Authorization has expired, re-authing next run."
-        return None
+        return {}
     except errors.HttpError, err:
         print err
         print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
-        return None
+        return {}
 
 def fmt_responses(response):
     """Provides basic formatting for some common collection.list fields."""
