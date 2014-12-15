@@ -28,6 +28,7 @@ by running:
 
 import argparse
 import httplib2
+import logging
 import os
 import pygeoip
 import sys
@@ -79,11 +80,13 @@ def filter_collection(collection, collection_filter):
         # API access happens here
         return req.execute()
     except client.AccessTokenRefreshError:
-        print "Authorization has expired, re-authing next run."
+        logging.critical("Authorization has expired, re-authing next run.")
         return {}
     except errors.HttpError, err:
-        print err
-        print "The userKey='{userKey}' does not exist or is suspended".format(**collection_filter)
+        logging.error("Collection of userKey=%s, actorIpAddress=%s, failed: %s",
+                      collection_filter['userKey'],
+                      collection_filter['actorIpAddress'],
+                      err)
         return {}
 
 def fmt_responses(response):
@@ -147,6 +150,10 @@ def main(argv):
     admin-sdk reports API:
         https://developers.google.com/admin-sdk/reports/v1/reference/activities/list"""
     parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', dest='verbosity', \
+                        action='count', \
+                        default=0, \
+                        help='One invocation: INFO level, two: DEBUG.')
     parser.add_argument('selectors', type=valid_selector)
 
     subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
@@ -160,6 +167,12 @@ def main(argv):
 
     # Parse the command-line flags.
     flags = parser.parse_args(argv[1:])
+
+    # Transform -v's to an number between 10 and logging.WARNING (==30)
+    loglevel = max(logging.WARNING - (flags.verbosity * 10), 10)
+    logging.basicConfig(level=loglevel)
+    logging.info("Log level set to: '%s'", logging.getLevelName(loglevel))
+
     # Construct the service object for the interacting with the Admin Reports API.
     service = oauthorize(CLIENT_SECRETS, SESSION_STATE)
 
@@ -180,7 +193,7 @@ def main(argv):
         if response.has_key('items'):
             responses.extend(response['items'])
         else:
-            print "Failed to collect results for {}".format(selector)
+            logging.info("Did not find results for %s", selector)
 
     responses.sort(key=lambda event: datetime.strptime(event['id']['time'], \
                                                       "%Y-%m-%dT%H:%M:%S.000Z"))
