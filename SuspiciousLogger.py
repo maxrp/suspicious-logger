@@ -178,9 +178,10 @@ def main(argv):
 
     # Select the activities collection
     collection = service.activities()
+    # Set up the base collection filter
     collection_filter = {'applicationName': 'login'}
 
-    # probably a better way to do this with argparse
+    # Provided flags has this attr, filters will at least be None
     if hasattr(flags, 'eventName'):
         collection_filter['eventName'] = flags.eventName
         collection_filter['filters'] = flags.filters
@@ -188,12 +189,14 @@ def main(argv):
     responses = []
 
     for selector in flags.selectors:
+        # Sets the correct per-iterable selector collection filter key
         collection_filter = set_collection_filter(collection_filter, selector)
         response = filter_collection(collection, collection_filter)
         if response.has_key('items'):
             responses.extend(response['items'])
         else:
-            logging.info("Did not find results for %s", selector)
+            logging.info("Did not find results for %s, %s", \
+                         selector, collection_filter)
 
     responses.sort(key=lambda event: datetime.strptime(event['id']['time'], \
                                                       "%Y-%m-%dT%H:%M:%S.000Z"))
