@@ -126,7 +126,7 @@ def valid_selector(selector):
             try:
                 results.extend([ip for ip in IP(selector)])  # The IP is itself iterable
             except:
-                raise
+                raise argparse.ArgumentTypeError("'{}' is not an IP or email.".format(selector))
     return results
 
 def set_collection_filter(collection_filter, selector):
