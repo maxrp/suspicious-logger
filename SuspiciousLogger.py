@@ -89,29 +89,49 @@ def filter_collection(collection, collection_filter):
                       err)
         return {}
 
-def fmt_responses(response):
+def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
-    log_fmt = "{id[time]}  {ipAddress}  {region}, {country}  {actor[email]}  "
-    log_fmt += "{events[0][name]}"
-    ext_fmt = log_fmt + "  {login_type}"
-    for entry in response:
-        # unpack non-redundant extra details such as login_type to the top level dict
-        for event in entry['events']:
-            if event.has_key('parameters'):
-                params = event['parameters'].pop()
-                if not entry.has_key(params['name']) and params.has_key('value'):
-                    entry[params['name']] = params['value']
+    log_fmt = "{time} {ip} {loc} {actor} {event} "
+    if response.has_key('login_type'):
+        log_fmt += response['login_type']
+    return log_fmt.format(**response)
 
-        location = GEOIP.record_by_addr(entry['ipAddress'])
-        entry['country'] = location.get('country_code3', 'Unknown')
-        entry['region'] = location.get('metro_code')
-        if entry['region'] == None:
-            entry['region'] = "{}, {}".format(location.get('city', 'Unknown'),
-                                              location.get('region_code', 'Unknown'))
-        if entry.has_key('login_type'):
-            yield ext_fmt.format(**entry)
-        else:
-            yield log_fmt.format(**entry)
+def geoip_metro(ip_addr):
+    """Transform an IP into a reasonably readable country and region code,
+    preferring metro_code over region_code (metro code seems to be what is
+    most comprehensible, when available)."""
+    location = GEOIP.record_by_addr(ip_addr)
+    metro = location.get('metro_code')
+    country = location.get('country_code3', 'Unknown')
+    if not metro:
+        # fall back to this if there's no metro_code
+        metro = "{}, {}".format(location.get('city', 'Unknown'),
+                                location.get('region_code', 'Unknown'))
+    return "{}, {}".format(metro, country)
+
+def repack_collection(col):
+    """Repacks a collection.list item into a dictionary with the record keyed
+    off it's globally unique etag, ensuring merged collections are not
+    redundant while also flatting them quite a bit for greater ease in sorting."""
+    packed = {}
+    for entry in col:
+        etag = entry['etag']
+
+        packed[etag] = {'actor': entry['actor']['email'],
+                        'ip':    entry['ipAddress'],
+                        'loc':   geoip_metro(entry['ipAddress']),
+                        'time':  datetime.strptime(entry['id']['time'], \
+                                                   "%Y-%m-%dT%H:%M:%S.000Z")}
+        print entry['events']
+        for event in entry['events']:
+            if event.has_key('name'):
+                packed[etag]['event'] = event['name']
+            if event.has_key('parameters'):
+                for params in event['parameters']:
+                    if params.has_key('name') and params.has_key('value'):
+                        packed[etag][params['name']] = params['value']
+        logging.debug("Repacked entry as: %s", packed[etag])
+    return packed
 
 def valid_selector(selector):
     """Validator for the 'selector' arg type -- checks for one or more email
@@ -186,22 +206,20 @@ def main(argv):
         collection_filter['eventName'] = flags.eventName
         collection_filter['filters'] = flags.filters
 
-    responses = []
+    responses = {}
 
     for selector in flags.selectors:
         # Sets the correct per-iterable selector collection filter key
         collection_filter = set_collection_filter(collection_filter, selector)
         response = filter_collection(collection, collection_filter)
         if response.has_key('items'):
-            responses.extend(response['items'])
+            responses.update(repack_collection(response['items']))
         else:
             logging.info("Did not find results for %s, %s", \
                          selector, collection_filter)
 
-    responses.sort(key=lambda event: datetime.strptime(event['id']['time'], \
-                                                      "%Y-%m-%dT%H:%M:%S.000Z"))
-
-    print "\n".join([response for response in fmt_responses(responses)])
+    login_sequence = sorted(responses, key=lambda x: responses[x]['time'])
+    print "\n".join([fmt_response(responses[k]) for k in login_sequence])
 
 if __name__ == '__main__':
     main(sys.argv)
