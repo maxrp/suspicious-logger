@@ -122,7 +122,6 @@ def repack_collection(col):
                         'loc':   geoip_metro(entry['ipAddress']),
                         'time':  datetime.strptime(entry['id']['time'], \
                                                    "%Y-%m-%dT%H:%M:%S.000Z")}
-        print entry['events']
         for event in entry['events']:
             if event.has_key('name'):
                 packed[etag]['event'] = event['name']
