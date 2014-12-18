@@ -38,6 +38,7 @@ from IPy import IP
 from googleapiclient import discovery, errors
 from oauth2client import file as oauth_file
 from oauth2client import client, tools
+from threading import Thread, Lock, active_count as active_thread_count
 
 # CLIENT_SECRETS is name of a file containing the OAuth 2.0 information
 # <https://cloud.google.com/console#/project/803928506099/apiui>
@@ -164,11 +165,33 @@ def set_collection_filter(collection_filter, selector):
 
     return collection_filter
 
+def query_worker(collection_filter, selector, responses):
+    """A worker fn for authorizing then querying against the reports API.
+
+    The SSL connection created in oauthorize() is subsequently used by the
+    query so 'service' and 'collection' need to be local to each thread."""
+    # Construct the service object for the Admin Reports API.
+    service = oauthorize(CLIENT_SECRETS, SESSION_STATE)
+    # Select the activities collection
+    collection = service.activities()
+    collection_filter = set_collection_filter(collection_filter, selector)
+    response = filter_collection(collection, collection_filter)
+
+    if response.has_key('items'):
+        final_collection = repack_collection(response['items'])
+        update_lock = Lock()
+        with update_lock:
+            responses.update(final_collection)
+    else:
+        logging.info("Did not find results for %s, %s", selector, collection_filter)
+
 def main(argv):
     """This tool composes the rudiments of exposing the various aspect of the
     admin-sdk reports API:
         https://developers.google.com/admin-sdk/reports/v1/reference/activities/list"""
     parser = argparse.ArgumentParser()
+    parser.add_argument('-j', '--jobs', nargs=1, default=25, \
+                        help="Maximum number of query threads to spawn.")
     parser.add_argument('-v', '--verbose', dest='verbosity', \
                         action='count', \
                         default=0, \
@@ -192,11 +215,7 @@ def main(argv):
     logging.basicConfig(level=loglevel)
     logging.info("Log level set to: '%s'", logging.getLevelName(loglevel))
 
-    # Construct the service object for the interacting with the Admin Reports API.
-    service = oauthorize(CLIENT_SECRETS, SESSION_STATE)
 
-    # Select the activities collection
-    collection = service.activities()
     # Set up the base collection filter
     collection_filter = {'applicationName': 'login'}
 
@@ -205,20 +224,18 @@ def main(argv):
         collection_filter['eventName'] = flags.eventName
         collection_filter['filters'] = flags.filters
 
-    responses = {}
+    responses = {} # this dict has new results .merge()'d within a lock by each thread
+    while len(flags.selectors) is not 0:
+        if active_thread_count() < flags.jobs:
+            selector = flags.selectors.pop()
+            worker = Thread(target=query_worker, args=(collection_filter, selector, responses))
+            worker.start()
 
-    for selector in flags.selectors:
-        # Sets the correct per-iterable selector collection filter key
-        collection_filter = set_collection_filter(collection_filter, selector)
-        response = filter_collection(collection, collection_filter)
-        if response.has_key('items'):
-            responses.update(repack_collection(response['items']))
-        else:
-            logging.info("Did not find results for %s, %s", \
-                         selector, collection_filter)
-
-    login_sequence = sorted(responses, key=lambda x: responses[x]['time'])
-    print "\n".join([fmt_response(responses[k]) for k in login_sequence])
+    while True:
+        login_sequence = sorted(responses, key=lambda x: responses[x]['time'])
+        if active_thread_count() is 1:
+            print "\n".join([fmt_response(responses[k]) for k in login_sequence])
+            sys.exit(0)
 
 if __name__ == '__main__':
     main(sys.argv)
