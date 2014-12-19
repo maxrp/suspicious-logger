@@ -200,9 +200,12 @@ def main(argv):
                         action='count', \
                         default=0, \
                         help='One invocation: INFO level, two: DEBUG.')
-    parser.add_argument('selectors', type=valid_selector)
+    parser.add_argument('selectors', type=valid_selector, \
+                        help='An IP, CIDR range, gmail address, comma separated\
+                        list of all three or the word "all".')
 
-    subparsers = parser.add_subparsers(help='List all events or filter by eventname and additional filters.')
+    subparsers = parser.add_subparsers(help='List all events or filter by \
+                                       eventname and additional filters.')
     subparsers.add_parser('list', help='List all events.')
 
     event_parser = subparsers.add_parser('events', \
