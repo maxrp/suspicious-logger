@@ -96,7 +96,7 @@ def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
     log_fmt = u"{time} {ip} {loc} {actor} {event} "
     response['time'] = datetime.strftime(response['time'], RFC3339_ZULU_FMT)
-    if response.has_key('login_type'):
+    if 'login_type' in response:
         log_fmt += response['login_type']
     return log_fmt.format(**response)
 
@@ -128,11 +128,11 @@ def repack_collection(col):
                         u'time':  datetime.strptime(entry['id']['time'],
                                                     RFC3339_ZULU_FMT),}
         for event in entry['events']:
-            if event.has_key('name'):
+            if 'name' in event:
                 packed[etag]['event'] = event['name']
-            if event.has_key('parameters'):
+            if 'parameters' in event:
                 for params in event['parameters']:
-                    if params.has_key('name') and params.has_key('value'):
+                    if 'name' and 'value' in params:
                         packed[etag][params['name']] = params['value']
         logging.debug("Repacked entry as: %s", packed[etag])
     return packed
@@ -185,7 +185,7 @@ def query_worker(collection_filter, selector, responses):
     collection_filter = set_collection_filter(collection_filter, selector)
     response = filter_collection(collection, collection_filter)
 
-    if response.has_key('items'):
+    if 'items' in response:
         final_collection = repack_collection(response['items'])
         update_lock = Lock()
         with update_lock:
