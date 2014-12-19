@@ -11,18 +11,36 @@ To install the required Python27 modules:
 
     pip install -r requirements.txt
 
-Example invokations.
+NOTE: This API is *near* real-time but inexplicably lags behind email notices of
+"suspicious logins" by days, weeks or even months. THANKS GOOGLE.
+
+
+Examples
+========
 
 List all logins from an IP:
 
-    ./SuspiciousLogger.py --actorIpAddress 10.0.0.33 list
+    ./SuspiciousLogger.py 10.0.0.33 list
+
+List all logins from an IP range:
+
+    ./SuspiciousLogger.py 10.0.0.0/24 list
 
 List all logins for a User:
 
-    ./SuspiciousLogger.py --userKey foobar@example.com list
+    ./SuspiciousLogger.py foobar@example.com list
 
-NOTE: This API is *near* real-time but inexplicably lags behind email notices of
-"suspicious logins" by days, weeks or even months. THANKS GOOGLE.
+List only successful logins:
+
+    ./SuspiciousLogger.py foobar@example.com events login_success
+
+List all failed google_password events:
+
+    ./SuspiciousLogger.py foobar@example.com events login_failure --filters 'login_type==google_password'
+
+List all suspicious logins for a user:
+
+    ./SuspiciousLogger.py foobar@example.com events login_success --filters 'is_suspicious==true'
 
 API Documentation
 =============
@@ -31,7 +49,7 @@ The documentation for the google-api-python-client library is avialable here:
 
    https://developers.google.com/api-client-library/python/start/get_started
 
-Documentation on some relevant event types for "--filter":
+Documentation on some relevant event types for events and "--filters":
 
     https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/admin-gmail-events
     https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/login-event-names
