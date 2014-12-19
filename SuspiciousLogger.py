@@ -41,6 +41,7 @@ from oauth2client import client, tools
 from pygeoip.const import ENCODING as GEOIP_ENC
 from threading import Thread, Lock, active_count as active_thread_count
 
+RFC3339_ZULU_FMT = '%Y-%m-%dT%H:%M:%S.%fZ'
 # CLIENT_SECRETS is name of a file containing the OAuth 2.0 information
 # <https://cloud.google.com/console#/project/803928506099/apiui>
 CLIENT_SECRETS = os.path.join(os.path.dirname(__file__), 'client_secrets.json')
@@ -94,6 +95,7 @@ def filter_collection(collection, collection_filter):
 def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
     log_fmt = u"{time} {ip} {loc} {actor} {event} "
+    response['time'] = datetime.strftime(response['time'], RFC3339_ZULU_FMT)
     if response.has_key('login_type'):
         log_fmt += response['login_type']
     return log_fmt.format(**response)
@@ -123,8 +125,8 @@ def repack_collection(col):
         packed[etag] = {u'actor': entry['actor']['email'],
                         u'ip':    entry['ipAddress'],
                         u'loc':   geoip_metro(entry['ipAddress']),
-                        u'time':  datetime.strptime(entry['id']['time'], \
-                                                   "%Y-%m-%dT%H:%M:%S.000Z")}
+                        u'time':  datetime.strptime(entry['id']['time'],
+                                                    RFC3339_ZULU_FMT),}
         for event in entry['events']:
             if event.has_key('name'):
                 packed[etag]['event'] = event['name']
