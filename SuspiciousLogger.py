@@ -38,6 +38,7 @@ from IPy import IP
 from googleapiclient import discovery, errors
 from oauth2client import file as oauth_file
 from oauth2client import client, tools
+from pygeoip.const import ENCODING as GEOIP_ENC
 from threading import Thread, Lock, active_count as active_thread_count
 
 # CLIENT_SECRETS is name of a file containing the OAuth 2.0 information
@@ -108,7 +109,8 @@ def geoip_metro(ip_addr):
         # fall back to this if there's no metro_code
         metro = "{}, {}".format(location.get('city', 'Unknown'),
                                 location.get('region_code', 'Unknown'))
-    return "{}, {}".format(metro, country)
+    return u"{}, {}".format(unicode(metro, GEOIP_ENC),
+                            unicode(country, GEOIP_ENC))
 
 def repack_collection(col):
     """Repacks a collection.list item into a dictionary with the record keyed
