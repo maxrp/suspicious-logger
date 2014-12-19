@@ -198,8 +198,8 @@ def main(argv):
                         help='One invocation: INFO level, two: DEBUG.')
     parser.add_argument('selectors', type=valid_selector)
 
-    subparsers = parser.add_subparsers(help='Select events by user, IP or event.')
-    subparsers.add_parser('list', help='List events by user or IP.')
+    subparsers = parser.add_subparsers(help='List all events or filter by eventname and additional filters.')
+    subparsers.add_parser('list', help='List all events.')
 
     event_parser = subparsers.add_parser('events', \
                                          help='Filter log lines by event type \

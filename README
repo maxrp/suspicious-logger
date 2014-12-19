@@ -22,7 +22,7 @@ List all logins from an IP:
 
     ./SuspiciousLogger.py 10.0.0.33 list
 
-List all logins from an IP range:
+List all logins from a CIDR block:
 
     ./SuspiciousLogger.py 10.0.0.0/24 list
 
@@ -41,6 +41,10 @@ List all failed google_password events:
 List all suspicious logins for a user:
 
     ./SuspiciousLogger.py foobar@example.com events login_success --filters 'is_suspicious==true'
+
+List all suspicious SAML logins from a CIDR block:
+
+    ./SuspiciousLogger.py 10.0.0.0/24 events login_success --filters 'login_type==saml,is_suspicious==true'
 
 API Documentation
 =============
