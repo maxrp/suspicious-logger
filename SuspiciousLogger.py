@@ -143,7 +143,11 @@ def valid_selector(selector):
     results = []
 
     for selector in selector.split(','):
-        if '@' in selector: # it's probably email address(es)
+        if selector == 'all':
+            # Return early in this case as additional selectors are redundant
+            return [selector]
+        elif '@' in selector:
+            # it's probably email address(es)
             results.append(selector)
         else:
             try:
