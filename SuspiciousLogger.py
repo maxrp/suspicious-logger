@@ -93,7 +93,7 @@ def filter_collection(collection, collection_filter):
 
 def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
-    log_fmt = "{time} {ip} {loc} {actor} {event} "
+    log_fmt = u"{time} {ip} {loc} {actor} {event} "
     if response.has_key('login_type'):
         log_fmt += response['login_type']
     return log_fmt.format(**response)
@@ -120,10 +120,10 @@ def repack_collection(col):
     for entry in col:
         etag = entry['etag']
 
-        packed[etag] = {'actor': entry['actor']['email'],
-                        'ip':    entry['ipAddress'],
-                        'loc':   geoip_metro(entry['ipAddress']),
-                        'time':  datetime.strptime(entry['id']['time'], \
+        packed[etag] = {u'actor': entry['actor']['email'],
+                        u'ip':    entry['ipAddress'],
+                        u'loc':   geoip_metro(entry['ipAddress']),
+                        u'time':  datetime.strptime(entry['id']['time'], \
                                                    "%Y-%m-%dT%H:%M:%S.000Z")}
         for event in entry['events']:
             if event.has_key('name'):
@@ -243,7 +243,7 @@ def main(argv):
     while True:
         login_sequence = sorted(responses, key=lambda x: responses[x]['time'])
         if active_thread_count() is 1:
-            print "\n".join([fmt_response(responses[k]) for k in login_sequence])
+            print u"\n".join([fmt_response(responses[k]) for k in login_sequence])
             sys.exit(0)
 
 if __name__ == '__main__':
