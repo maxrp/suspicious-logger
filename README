@@ -38,6 +38,10 @@ List all failed google_password events:
 
     ./SuspiciousLogger.py maxp-high@pdx.edu events login_failure --filters 'login_type==google_password'
 
+List all suspicious logins:
+
+    ./SuspiciousLogger.py all events login_success --filters 'is_suspicious==true'
+
 List all suspicious logins for a user:
 
     ./SuspiciousLogger.py maxp-high@pdx.edu events login_success --filters 'is_suspicious==true'
@@ -45,6 +49,10 @@ List all suspicious logins for a user:
 List all suspicious SAML logins from a CIDR block:
 
     ./SuspiciousLogger.py 131.252.132.0/24 events login_success --filters 'login_type==saml,is_suspicious==true'
+
+List all non-suspicious, non-SAML logins from a CIDR block:
+
+    ./SuspiciousLogger.py 131.252.132.0/24 events login_success --filters 'login_type<>saml,is_suspicious<>true'
 
 API Documentation
 =============
