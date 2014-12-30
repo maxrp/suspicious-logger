@@ -101,10 +101,10 @@ def filter_collection(collection, collection_filter):
 
 def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
-    log_fmt = u"{time} {ip: <40}{loc: <35}{actor: <18} {event}"
+    log_fmt = u"{time} {ip} {loc} {actor} {event} "
     response['time'] = datetime.strftime(response['time'], RFC3339_ZULU_FMT)
     if 'login_type' in response:
-        log_fmt += ' {login_type}'
+        log_fmt += response['login_type']
     return log_fmt.format(**response)
 
 
