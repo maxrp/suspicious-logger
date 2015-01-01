@@ -32,7 +32,9 @@ import logging
 import os
 import pygeoip
 import sys
+import time
 
+from copy import copy
 from datetime import datetime
 from IPy import IP
 from googleapiclient import discovery, errors
@@ -211,18 +213,60 @@ def query_worker(collection_filter, selector, responses):
                      selector, collection_filter)
 
 
+def spawn_workers(jobs, selectors, collection_filter, responses):
+    """Spawn a pool of workers using taking selectors, collection_filter and
+    responses dicts and constrained to a maximum number of jobs."""
+    logging.info("Spawning %s threads", min(jobs, len(selectors)))
+    while len(selectors) is not 0:
+        if active_thread_count() < jobs:
+            selector = selectors.pop()
+            worker = Thread(target=query_worker, name=selector,
+                            args=(collection_filter, selector, responses))
+            worker.start()
+
+
+def manage_workers(flags, collection_filter, responses):
+    """Monitor a response dict printing new entries and spawning new workers as
+    needed."""
+    old_responses, login_sequence = {}, []
+    while True:
+        if active_thread_count() is 1:
+            if responses.keys() != old_responses.keys():
+                logging.info("New entries found.")
+                old_sequence = login_sequence
+                login_sequence = sorted(responses,
+                                        key=lambda x: responses[x]['time'])
+                print u"\n".join([fmt_response(responses[k])
+                                  for k in login_sequence
+                                  if k not in old_sequence])
+            else:
+                logging.info("No new entries.")
+
+            if flags.follow:
+                logging.info("Sleeping for %s seconds.", flags.interval)
+                time.sleep(flags.interval)
+                old_responses = responses
+                selectors = copy(flags.selectors)
+                spawn_workers(flags.jobs, selectors,
+                              collection_filter, responses)
+            else:
+                return
+
+
 def main(argv):
     """This tool composes the rudiments of exposing the various aspect of the
     admin-sdk reports API:
     https://developers.google.com/admin-sdk/reports/v1/reference/activities/list
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--interval', default=120, type=int)
     parser.add_argument('-j', '--jobs', nargs=1, default=25,
                         help="Maximum number of query threads to spawn.")
     parser.add_argument('-v', '--verbose', dest='verbosity',
                         action='count',
                         default=0,
                         help='One invocation: INFO level, two: DEBUG.')
+    parser.add_argument('-f', '--follow', action='store_true', default=False)
     parser.add_argument('selectors', type=valid_selector,
                         help='An IP, CIDR range, gmail address, comma separated\
                         list of all three or the word "all".')
@@ -254,20 +298,21 @@ def main(argv):
         collection_filter['filters'] = flags.filters
 
     # responses dict has new results .merge()'d within a lock by each thread
-    responses = {}
-    while len(flags.selectors) is not 0:
-        if active_thread_count() < flags.jobs:
-            selector = flags.selectors.pop()
-            worker = Thread(target=query_worker, args=(collection_filter,
-                                                       selector, responses))
-            worker.start()
+    responses, login_sequence = {}, []
+    selectors = copy(flags.selectors)
+    spawn_workers(flags.jobs, selectors, collection_filter, responses)
 
-    while True:
-        login_sequence = sorted(responses, key=lambda x: responses[x]['time'])
-        if active_thread_count() is 1:
-            print u"\n".join([fmt_response(responses[k])
-                              for k in login_sequence])
-            sys.exit(0)
+    try:
+        manage_workers(flags, collection_filter, responses)
+    except KeyboardInterrupt:
+        logging.critical('Exitting early on user request.')
+        logging.critical('Printing available results...')
+        login_sequence = sorted(responses,
+                                key=lambda x: responses[x]['time'])
+        print u"\n".join([fmt_response(responses[k]) for k in login_sequence])
+        sys.exit(127)
+    else:
+        sys.exit(0)
 
 if __name__ == '__main__':
     main(sys.argv)
