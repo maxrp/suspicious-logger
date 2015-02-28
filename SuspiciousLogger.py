@@ -305,10 +305,6 @@ def main(argv):
         manage_workers(flags, collection_filter, responses)
     except KeyboardInterrupt:
         logging.critical('Exitting early on user request.')
-        logging.critical('Printing available results...')
-        login_sequence = sorted(responses,
-                                key=lambda x: responses[x]['time'])
-        print u"\n".join([fmt_response(responses[k]) for k in login_sequence])
         sys.exit(127)
     else:
         sys.exit(0)
