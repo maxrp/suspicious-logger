@@ -231,7 +231,7 @@ def manage_workers(flags, collection_filter, responses):
     while True:
         if active_thread_count() is 1:
             if responses.keys() != old_responses.keys():
-                logging.info("New entries found.")
+                logging.critical("New entries found.")
                 old_sequence = login_sequence
                 login_sequence = sorted(responses,
                                         key=lambda x: responses[x]['time'])
