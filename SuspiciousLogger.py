@@ -105,7 +105,7 @@ def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
     log_fmt = u"{time} {ip} {loc} {actor} {event} "
     if 'login_type' in response:
-        log_fmt += response['login_type']
+        log_fmt += unicode(response['login_type'])
     return log_fmt.format(**response)
 
 
