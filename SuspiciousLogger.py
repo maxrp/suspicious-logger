@@ -27,6 +27,7 @@ by running:
 """
 
 import argparse
+import codecs
 import httplib2
 import logging
 import os
@@ -51,6 +52,9 @@ CLIENT_SECRETS = os.path.join(DIR_NAME, 'client_secrets.json')
 SESSION_STATE = os.path.join(DIR_NAME, 'SuspiciousLogger.dat')
 GEOIP_DATA = os.path.join(DIR_NAME, 'GeoIP_data', 'GeoLiteCity.dat')
 GEOIP = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
+
+# set UTF-8 encoding on stdout channel
+sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
 
 
 def oauthorize(client_secrets, session_file):
@@ -105,7 +109,7 @@ def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
     log_fmt = u"{time} {ip} {loc} {actor} {event} "
     if 'login_type' in response:
-        log_fmt += unicode(response['login_type'])
+        log_fmt += response['login_type']
     return log_fmt.format(**response)
 
 
@@ -114,12 +118,17 @@ def geoip_metro(ip_addr):
     preferring metro_code over region_code (metro code seems to be what is
     most comprehensible, when available)."""
     location = GEOIP.record_by_addr(ip_addr)
-    metro = location.get('metro_code')
-    country = location.get('country_code3', 'Unknown')
-    if not metro:
-        # fall back to this if there's no metro_code
-        metro = "{}, {}".format(location.get('city', 'Unknown'),
-                                location.get('region_code', 'Unknown'))
+    if location:
+        metro = location.get('metro_code', 'Unknown')
+        country = location.get('country_code3', 'Unknown')
+        if not metro:
+            # fall back to this if there's no metro_code
+            metro = "{}, {}".format(location.get('city', 'Unknown'),
+                                    location.get('region_code', 'Unknown'))
+    else:
+        # location is None
+        metro = 'Unknown'
+        country = 'Unknown'
     return u"{}, {}".format(unicode(metro, GEOIP_ENC),
                             unicode(country, GEOIP_ENC))
 
@@ -235,9 +244,9 @@ def manage_workers(flags, collection_filter, responses):
                 old_sequence = login_sequence
                 login_sequence = sorted(responses,
                                         key=lambda x: responses[x]['time'])
-                print u"\n".join([fmt_response(responses[k])
+                print(u"\n".join([fmt_response(responses[k])
                                   for k in login_sequence
-                                  if k not in old_sequence])
+                                  if k not in old_sequence]))
             else:
                 logging.info("No new entries.")
 
