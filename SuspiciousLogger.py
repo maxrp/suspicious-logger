@@ -118,12 +118,17 @@ def geoip_metro(ip_addr):
     preferring metro_code over region_code (metro code seems to be what is
     most comprehensible, when available)."""
     location = GEOIP.record_by_addr(ip_addr)
-    metro = location.get('metro_code')
-    country = location.get('country_code3', 'Unknown')
-    if not metro:
-        # fall back to this if there's no metro_code
-        metro = "{}, {}".format(location.get('city', 'Unknown'),
-                                location.get('region_code', 'Unknown'))
+    if location:
+        metro = location.get('metro_code', 'Unknown')
+        country = location.get('country_code3', 'Unknown')
+        if not metro:
+            # fall back to this if there's no metro_code
+            metro = "{}, {}".format(location.get('city', 'Unknown'),
+                                    location.get('region_code', 'Unknown'))
+    else:
+        # location is None
+        metro = 'Unknown'
+        country = 'Unknown'
     return u"{}, {}".format(unicode(metro, GEOIP_ENC),
                             unicode(country, GEOIP_ENC))
 
