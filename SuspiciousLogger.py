@@ -240,13 +240,13 @@ def manage_workers(flags, collection_filter, responses):
     while True:
         if active_thread_count() is 1:
             if responses.keys() != old_responses.keys():
-                logging.info("New entries found.")
+                logging.critical("New entries found.")
                 old_sequence = login_sequence
                 login_sequence = sorted(responses,
                                         key=lambda x: responses[x]['time'])
-                print u"\n".join([fmt_response(responses[k])
+                print(u"\n".join([fmt_response(responses[k])
                                   for k in login_sequence
-                                  if k not in old_sequence])
+                                  if k not in old_sequence]))
             else:
                 logging.info("No new entries.")
 
@@ -314,10 +314,6 @@ def main(argv):
         manage_workers(flags, collection_filter, responses)
     except KeyboardInterrupt:
         logging.critical('Exitting early on user request.')
-        logging.critical('Printing available results...')
-        login_sequence = sorted(responses,
-                                key=lambda x: responses[x]['time'])
-        print u"\n".join([fmt_response(responses[k]) for k in login_sequence])
         sys.exit(127)
     else:
         sys.exit(0)
