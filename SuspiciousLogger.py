@@ -27,6 +27,7 @@ by running:
 """
 
 import argparse
+import codecs
 import httplib2
 import logging
 import os
@@ -51,6 +52,9 @@ CLIENT_SECRETS = os.path.join(DIR_NAME, 'client_secrets.json')
 SESSION_STATE = os.path.join(DIR_NAME, 'SuspiciousLogger.dat')
 GEOIP_DATA = os.path.join(DIR_NAME, 'GeoIP_data', 'GeoLiteCity.dat')
 GEOIP = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
+
+# set UTF-8 encoding on stdout channel
+sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
 
 
 def oauthorize(client_secrets, session_file):
