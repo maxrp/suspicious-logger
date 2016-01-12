@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 # Source: http://dev.maxmind.com/geoip/legacy/geolite/
 
