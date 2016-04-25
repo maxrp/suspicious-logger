@@ -53,9 +53,6 @@ SESSION_STATE = os.path.join(DIR_NAME, 'SuspiciousLogger.dat')
 GEOIP_DATA = os.path.join(DIR_NAME, 'GeoIP_data', 'GeoLiteCity.dat')
 GEOIP = pygeoip.GeoIP(GEOIP_DATA, pygeoip.MMAP_CACHE)
 
-# set UTF-8 encoding on stdout channel
-sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
-
 
 def oauthorize(client_secrets, session_file):
     """Takes a path to a client_secrets.json and a session.dat file,
@@ -96,7 +93,7 @@ def filter_collection(collection, collection_filter):
     except client.AccessTokenRefreshError:
         logging.critical("Authorization has expired, re-authing next run.")
         return {}
-    except errors.HttpError, err:
+    except errors.HttpError as err:
         logging.error(
             "Collection of userKey=%s, actorIpAddress=%s, failed: %s",
             collection_filter['userKey'],
@@ -107,7 +104,7 @@ def filter_collection(collection, collection_filter):
 
 def fmt_response(response):
     """Provides basic formatting for some common collection.list fields."""
-    log_fmt = u"{time} {ip} {loc} {actor} {event} "
+    log_fmt = "{time} {ip} {loc} {actor} {event} "
     if 'login_type' in response:
         log_fmt += response['login_type']
     return log_fmt.format(**response)
@@ -129,8 +126,7 @@ def geoip_metro(ip_addr):
         # location is None
         metro = 'Unknown'
         country = 'Unknown'
-    return u"{}, {}".format(unicode(metro, GEOIP_ENC),
-                            unicode(country, GEOIP_ENC))
+    return "{}, {}".format(metro, country)
 
 
 def repack_collection(col):
@@ -142,10 +138,10 @@ def repack_collection(col):
     for entry in col:
         etag = entry['etag']
 
-        packed[etag] = {u'actor': entry['actor']['email'],
-                        u'ip':    entry['ipAddress'],
-                        u'loc':   geoip_metro(entry['ipAddress']),
-                        u'time':  datetime.strptime(entry['id']['time'],
+        packed[etag] = {'actor': entry['actor']['email'],
+                        'ip':    entry['ipAddress'],
+                        'loc':   geoip_metro(entry['ipAddress']),
+                        'time':  datetime.strptime(entry['id']['time'],
                                                     RFC3339_ZULU_FMT)}
         for event in entry['events']:
             if 'name' in event:
@@ -239,14 +235,14 @@ def manage_workers(flags, collection_filter, responses):
     old_responses, login_sequence = {}, []
     while True:
         if active_thread_count() is 1:
-            if responses.keys() != old_responses.keys():
+            if list(responses.keys()) != list(old_responses.keys()):
                 logging.critical("New entries found.")
                 old_sequence = login_sequence
                 login_sequence = sorted(responses,
                                         key=lambda x: responses[x]['time'])
-                print(u"\n".join([fmt_response(responses[k])
+                print(("\n".join([fmt_response(responses[k])
                                   for k in login_sequence
-                                  if k not in old_sequence]))
+                                  if k not in old_sequence])))
             else:
                 logging.info("No new entries.")
 
