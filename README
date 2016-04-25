@@ -20,23 +20,23 @@ Examples
 
 List all logins from an IP:
 
-    ./SuspiciousLogger.py 131.252.132.33 list
+    ./SuspiciousLogger.py 10.0.0.33 list
 
 List all logins from a CIDR block:
 
-    ./SuspiciousLogger.py 131.252.132.0/24 list
+    ./SuspiciousLogger.py 10.0.0.0/24 list
 
 List all logins for a User:
 
-    ./SuspiciousLogger.py maxp@pdx.edu list
+    ./SuspiciousLogger.py foobar@example.com list
 
 List only successful logins:
 
-    ./SuspiciousLogger.py maxp-high@pdx.edu events login_success
+    ./SuspiciousLogger.py foobar@example.com events login_success
 
 List all failed google_password events:
 
-    ./SuspiciousLogger.py maxp-high@pdx.edu events login_failure --filters 'login_type==google_password'
+    ./SuspiciousLogger.py foobar@example.com events login_failure --filters 'login_type==google_password'
 
 List all suspicious logins:
 
@@ -44,15 +44,15 @@ List all suspicious logins:
 
 List all suspicious logins for a user:
 
-    ./SuspiciousLogger.py maxp-high@pdx.edu events login_success --filters 'is_suspicious==true'
+    ./SuspiciousLogger.py foobar@example.com events login_success --filters 'is_suspicious==true'
 
 List all suspicious SAML logins from a CIDR block:
 
-    ./SuspiciousLogger.py 131.252.132.0/24 events login_success --filters 'login_type==saml,is_suspicious==true'
+    ./SuspiciousLogger.py 10.0.0.0/24 events login_success --filters 'login_type==saml,is_suspicious==true'
 
 List all non-suspicious, non-SAML logins from a CIDR block:
 
-    ./SuspiciousLogger.py 131.252.132.0/24 events login_success --filters 'login_type<>saml,is_suspicious<>true'
+    ./SuspiciousLogger.py 10.0.0.0/24 events login_success --filters 'login_type<>saml,is_suspicious<>true'
 
 API Documentation
 =============
