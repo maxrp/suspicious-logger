@@ -25,10 +25,10 @@ Next, you must provision OAuth credentials for the tool to run:
  1. Finally, run a test query in the tool (i.e. 
     `./SuspiciousLogger.py ${USER}@example.com list`), this will lead to the
     tool presenting a URL.
-        1. Copy and paste the URL into a browser session where your Superadmin
-           account from step one is logged in.
-        1. Accept the access requested by the tool, which will yield a code.
-        1. Paste the code from the prior step into the SuspiciousLogger prompt.
+    1. Copy and paste the URL into a browser session where your Superadmin
+       account from step one is logged in.
+    1. Accept the access requested by the tool, which will yield a code.
+    1. Paste the code from the prior step into the SuspiciousLogger prompt.
 
 NOTE: This API is *near* real-time but inexplicably lags behind email notices of
 "suspicious logins" by days, weeks or even months. THANKS GOOGLE.
