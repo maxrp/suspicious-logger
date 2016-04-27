@@ -1,22 +1,40 @@
-Running
-=======
+# Suspicious Logger
 
-This script is a small set of modifications to Google's generated example app.
+A CLI tool for examining Google Apps login events.
 
-If you need a set of GeoIP data files, or to update them:
+## Setup
+
+To start you need [Maxmind's GeoIPlite data files][1]:
 
     ./GeoIP_data/update.sh
 
-To install the required Python27 modules:
+Then install the required Python modules:
 
     pip install -r requirements.txt
+
+Next, you must provision OAuth credentials for the tool to run:
+ 1. Log in to GApps using a Superadmin account.
+ 1. Go to the [Google APIs Credentials page][2] and select "Create credentials".
+ 1. Select "OAuth Client ID" as the type of credential to create.
+ 1. For "application type" select "Other" and enter "SuspiciousLogger" or
+    something which will clearly be associated with the purpose.
+ 1. The API credentials page will now yield a client_id and client_secret.
+ 1. Copy client_secrets.json.example to client_secrets.json.
+ 1. Copy and paste the client_id and client_secret into the matching fields in
+    client_secrets.json.
+ 1. Finally, run a test query in the tool (i.e. 
+    `./SuspiciousLogger.py ${USER}@example.com list`), this will lead to the
+    tool presenting a URL.
+        1. Copy and paste the URL into a browser session where your Superadmin
+           account from step one is logged in.
+        1. Accept the access requested by the tool, which will yield a code.
+        1. Paste the code from the prior step into the SuspiciousLogger prompt.
 
 NOTE: This API is *near* real-time but inexplicably lags behind email notices of
 "suspicious logins" by days, weeks or even months. THANKS GOOGLE.
 
 
-Examples
-========
+## Examples
 
 List all logins from an IP:
 
@@ -65,3 +83,7 @@ Documentation on some relevant event types for events and "--filters":
 
     https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/admin-gmail-events
     https://developers.google.com/admin-sdk/reports/v1/reference/activity-ref-appendix-a/login-event-names
+
+
+[1]: http://dev.maxmind.com/geoip/
+[2]: https://console.developers.google.com/apis/credentials
