@@ -12,6 +12,9 @@ Then install the required Python modules:
 
     pip install -r requirements.txt
 
+This tool is developed with python3 in mind, but aside from some UTF-8 handling
+it will mostly work in python2.
+
 Next, you must provision OAuth credentials for the tool to run:
  1. Log in to GApps using a Superadmin account.
  1. Go to the [Google APIs Credentials page][2] and select "Create credentials".
