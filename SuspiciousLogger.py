@@ -80,7 +80,10 @@ def oauthorize(client_secrets, session_file):
     http = httplib2.Http()
     http = credentials.authorize(http)
 
-    return discovery.build('admin', 'reports_v1', http=http)
+    return discovery.build('admin',
+                           'reports_v1',
+                           http=http,
+                           cache_discovery=False)
 
 
 def filter_collection(collection, collection_filter):
